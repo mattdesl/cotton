@@ -3,7 +3,9 @@ precision mediump float;
 #endif
 varying vec4 v_col;
 varying vec3 v_normal;
+varying vec2 v_texCoord0;
 
+uniform sampler2D u_sampler0;
 
 //values used for shading algorithm...
 uniform vec2 Resolution;      //resolution of screen
@@ -14,7 +16,7 @@ uniform vec3 Falloff;         //attenuation coefficients
 
 
 void main() {
-	vec4 diffuseColor = v_col;
+	vec4 diffuseColor = v_col * texture2D(u_sampler0, v_texCoord0 * 1.0);
 
 
     //The delta position of light
@@ -48,5 +50,5 @@ void main() {
     vec3 Intensity = Ambient + Diffuse * Attenuation;
     vec3 FinalColor = diffuseColor.rgb * Intensity;
     gl_FragColor = v_col * vec4(FinalColor, diffuseColor.a);
-    // gl_FragColor = vec4(vec3(Attenuation), 1.0);
+    // gl_FragColor = vec4(vec3(v_texCoord0.x), 1.0);
 }

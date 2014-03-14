@@ -1,0 +1,31 @@
+{
+  "name": "cotton",
+  "version": "0.0.0",
+  "description": "",
+  "main": "test.js",
+  "dependencies": {
+    "brfs": "~1.0.0",
+    "kami": "~0.3.0",
+    "domready": "~1.0.4",
+    "klasse": "~1.0.8",
+    "cam3d": "~0.1.0",
+    "raf.js": "~0.0.3",
+    "kami-mesh": "~0.0.0",
+    "jquery": "~2.1.0",
+    "vecmath": "~0.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mattdesl/cotton.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mattdesl/cotton/issues"
+  },
+  "homepage": "https://github.com/mattdesl/cotton"
+}

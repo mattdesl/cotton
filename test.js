@@ -1,9 +1,9 @@
 
 
-var Vector2 = require('vecmath').Vector2;
-var World = require('knit.js').World;
-var Constraint = require('knit.js').Constraint;
-var PointMass = require('knit.js').PointMass;
+var Vector3 = require('vecmath').Vector3;
+var World = require('verlet3d').World;
+var Constraint = require('verlet3d').Constraint;
+var PointMass = require('verlet3d').PointMass;
 
 var Cloth = require('./lib/Cloth');
 var ClothRenderer = require('./lib/ClothRenderer');
@@ -21,8 +21,8 @@ var vert = fs.readFileSync( __dirname + '/lib/test.vert', 'utf8' );
 var frag = fs.readFileSync( __dirname + '/lib/test.frag', 'utf8' );
 
 domready(function() {
-    var width = 500;
-    var height = 300;
+    var width = window.innerWidth;
+    var height = window.innerHeight;
     var canvas = document.createElement("canvas");
     document.body.style.margin = "0";
     document.body.style.overflow = "hidden";
@@ -40,15 +40,15 @@ domready(function() {
     var mouseMaxDist = 20;
     var steps = 60;
 
-    var mouseTearInfluence = 3;
+    var mouseTearInfluence = 10;
     var gravity = 0;
     var useFloor = false;
 
-    var world = new World(new Vector2(0, gravity));
+    var world = new World(new Vector3(0, 0, 10));
     world.removablePins = true;
     world.setPinRemoveInfluence(15);
 
-    var cloth = new Cloth(250, 250, { spacing: 5, stiffness: 0.01, });
+    var cloth = new Cloth(512, 256, { spacing: 10, stiffness: 0.01, });
     world.addPoints(cloth.points);
     
     var mouseDown = false;
@@ -64,14 +64,16 @@ domready(function() {
     var texture,
     	renderer;
 
-    var lightZ = .15;
+    var lightZ = .45;
 
 
 	setupGL();
 
 	function setupGL() {
 		renderer = new ClothRenderer(context, vert, frag);
-		texture = new Texture(context, "img/grass.png", render);
+		texture = new Texture(context, "img/flag.jpg", render);
+		texture.setFilter(Texture.Filter.LINEAR);
+		texture.setWrap(Texture.Wrap.REPEAT);
 
 		renderer.lightPosition.set(0, 0, lightZ);
 
@@ -83,104 +85,27 @@ domready(function() {
         
         var gl = context.gl;
 
+        texture.bind(0);
+
         gl.clearColor(0,0,0,1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 		
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-        renderer.draw(world);
+        renderer.draw(world, cloth.cols, cloth.rows);
     }
-
-
-
-    function render2D(context) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-
-        world.step(0.016);
-
-        context.fillStyle = "black";
-        context.strokeStyle = 'black';
-        // context.globalCompositeOperation = 'source-over';
-        //context.shadowColor = 'rgba(255,255,200, 0.7)';
-
-        context.globalAlpha = 1;
-		context.imageSmoothingEnabled = true;
-
-		// context.lineJoin = 'round';
-		context.lineWidth = 1;
-        //context.beginPath(); //for line rendering
-        
-        for (var i=0; i<world.points.length; i++) {
-            var p = world.points[i];
-
-            if (p.constraints.length >= 2) {
-            	drawTriangle(context, p, i/world.points.length);
-            }
-
-            // for (var j=0; j<p.constraints.length; j++) {
-            //     var c = p.constraints[j];
-            //     // context.strokeStyle = 'hsl(0, 25%, '+ ~~(Math.random()*100) +'%)';
-            //     context.beginPath();
-            //     context.moveTo(c.p1.position.x, c.p1.position.y);
-            //     context.lineTo(c.p2.position.x, c.p2.position.y);
-            //     context.stroke();
-            // }
-        }
-    };
-
-    function drawTriangle(context, point, a) {
-		var c = point.constraints;
-        var botLeft = c[0].p2;
-        var topRight = c[1].p2;
-
-		// context.beginPath();
-  //       context.moveTo(point.position.x, point.position.y);
-  //       context.lineTo(c[0].p1.position.x, c[0].p1.position.y);
-  //       context.lineTo(c[1].p1.position.x, c[1].p1.position.y);
-  //       context.closePath();
-  //       context.fill();
-
-
-  		var alphaOff = 0;
-
-  		var v = ~~(a*255);
-  		context.fillStyle = context.strokeStyle = "rgb(" + v + "," + v +"," + v + ")";
-
-	  	//draw first triangle
-		// context.globalAlpha = a;
-		context.beginPath();
-        context.moveTo(point.position.x, point.position.y);     
-        context.lineTo(botLeft.position.x, botLeft.position.y);  
-        context.lineTo(topRight.position.x, topRight.position.y);  
-        context.closePath();
-        context.fill();
-       	context.stroke();
-		  
-
-        if (topRight.constraints.length > 0) {
-        	c = topRight.constraints;
-        	var other = c[0].p2;
-
-        	//draw second triangle
-			context.beginPath();
-	        context.moveTo(other.position.x, other.position.y);     
-	        context.lineTo(botLeft.position.x, botLeft.position.y+alphaOff);  
-	        context.lineTo(topRight.position.x+alphaOff, topRight.position.y);  
-	        context.closePath();
-	        context.fill();
-	        context.stroke();
-        }
-    }
-
+    var time = 0;
     window.addEventListener("mousemove", function(ev) {
     	renderer.lightPosition.set(ev.clientX / width, 1 - (ev.clientY/height), lightZ);
     	
+    	var z = Math.sin(time += 0.01) * 50;
+
         if (mouseDown) {
-            world.applyTear(ev.clientX, ev.clientY, mouseTearInfluence);
-            world.applyMotion(ev.clientX, ev.clientY, mouseInfluence, mouseScale, mouseMaxDist);
+            world.applyTear(ev.clientX, ev.clientY, z, mouseTearInfluence);
+            world.applyMotion(ev.clientX, ev.clientY, z, mouseInfluence, mouseScale, mouseMaxDist);
         } else
-            world.applyMotion(ev.clientX, ev.clientY, mouseInfluence, mouseScale, mouseMaxDist);
+            world.applyMotion(ev.clientX, ev.clientY, z, mouseInfluence, mouseScale, mouseMaxDist);
     });
 
 }
