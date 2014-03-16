@@ -13,7 +13,7 @@ var ShaderProgram = require('kami').ShaderProgram;
 var Texture = require('kami').Texture;
 
 var domready = require('domready');
-
+var raf = require('raf.js');
 
 var fs = require('fs');
 
@@ -25,6 +25,7 @@ domready(function() {
     var height = window.innerHeight;
     var canvas = document.createElement("canvas");
     document.body.style.margin = "0";
+    document.body.style.background = "black";
     document.body.style.overflow = "hidden";
     document.body.appendChild(canvas);
 
@@ -36,19 +37,19 @@ domready(function() {
 
 
     var mouseInfluence = 15;
-    var mouseScale = .5;
+    var mouseScale = .25;
     var mouseMaxDist = 20;
     var steps = 60;
 
-    var mouseTearInfluence = 10;
+    var mouseTearInfluence = 4;
     var gravity = 0;
     var useFloor = false;
 
-    var world = new World(new Vector3(0, 0, 10));
+    var world = new World(new Vector3(0, 0, 0));
     world.removablePins = true;
-    world.setPinRemoveInfluence(15);
+    // world.setPinRemoveInfluence(15);
 
-    var cloth = new Cloth(512, 256, { spacing: 10, stiffness: 0.01, });
+    var cloth = new Cloth(512, 256, { spacing: 8, stiffness: 0.01, });
     world.addPoints(cloth.points);
     
     var mouseDown = false;
@@ -61,19 +62,44 @@ domready(function() {
             mouseDown = false;
     });
 
+    window.addEventListener("keydown", function(ev) {
+        if (ev.keyCode === 32) {
+            world.points.length = 0;
+            cloth.create();
+            world.addPoints(cloth.points);
+        }
+    });
+
     var texture,
-    	renderer;
+    	renderer,
+        noiseTexture;
 
     var lightZ = .45;
 
 
-	setupGL();
+    setupGL();
+
+    function randomNoise() {
+        var w = cloth.width,
+            h = cloth.height;
+        var noise = new Uint8Array(w * h * 4);
+        for (var i=0; i<noise.length; i++) {
+            noise[i] = Math.floor(Math.random() * 255);
+        }
+
+        var noiseTex = new Texture(context, w, h, Texture.Format.RGBA, Texture.DataType.UNSIGNED_BYTE, noise);
+        noiseTex.setFilter(Texture.Filter.LINEAR);
+        noiseTex.setWrap(Texture.Wrap.REPEAT);
+        return noiseTex;
+    }
 
 	function setupGL() {
 		renderer = new ClothRenderer(context, vert, frag);
-		texture = new Texture(context, "img/flag.jpg", render);
+		texture = new Texture(context, getURL(), render);
 		texture.setFilter(Texture.Filter.LINEAR);
 		texture.setWrap(Texture.Wrap.REPEAT);
+
+        noiseTexture = randomNoise();
 
 		renderer.lightPosition.set(0, 0, lightZ);
 
@@ -85,6 +111,7 @@ domready(function() {
         
         var gl = context.gl;
 
+        noiseTexture.bind(1);
         texture.bind(0);
 
         gl.clearColor(0,0,0,1);
@@ -108,6 +135,7 @@ domready(function() {
             world.applyMotion(ev.clientX, ev.clientY, z, mouseInfluence, mouseScale, mouseMaxDist);
     });
 
-}
-
-);
+    function getURL() {
+        return "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+    }
+});

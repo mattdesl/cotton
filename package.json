@@ -9,7 +9,7 @@
     "domready": "~1.0.4",
     "klasse": "~1.0.8",
     "cam3d": "~0.1.0",
-    "raf.js": "~0.0.3",
+    "raf.js": "0.0.3",
     "kami-mesh": "~0.0.0",
     "jquery": "~2.1.0",
     "vecmath": "~0.1.0"
